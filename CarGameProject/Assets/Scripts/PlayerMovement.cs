@@ -4,11 +4,27 @@ using UnityEngine;
 
 public class PlayerMovement : MonoBehaviour
 {
-    public float speed;
+    //MOVEMENT
+    int speedInt;
+    float speed;
+    float resistence;
+    Animator anim;
+    float movement;
+
+    //LIFE
+    float hearts;
+    float damage;
+    bool isDamaged;
+
+
     // Start is called before the first frame update
     void Start()
     {
-        
+
+        if (isDamaged)
+        {
+            hearts--;
+        }
     }
 
     // Update is called once per frame
