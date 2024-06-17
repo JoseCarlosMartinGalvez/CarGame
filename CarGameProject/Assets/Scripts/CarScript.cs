@@ -16,19 +16,23 @@ public class CarScript : MonoBehaviour
     {
         public GameObject wheelModel;
         public WheelCollider wheelCollider;
+        public GameObject wheelEffectGO;
+        public ParticleSystem smokeParticle;
         public Axel axel;
     }
 
     public float maxAcceleration = 30.0f;
     public float brakeAcceleration = 50.0f;
 
-    public float turnSensitivity = 1.0f;
+    public float turnSensitivity = 1.5f;  // Ajustado para mejorar el giro
     public float maxSteerAngle = 30.0f;
+    public float highSpeedSteerAngle = 15.0f;  // Ángulo de giro reducido a alta velocidad
 
     public List<Wheel> wheels;
 
     float moveInput;
     float steerInput;
+    private float currentSpeed;
 
     private Rigidbody carRb;
 
@@ -39,12 +43,15 @@ public class CarScript : MonoBehaviour
     private void Start()
     {
         carRb = GetComponent<Rigidbody>();
+        carRb.centerOfMass = new Vector3(0, -0.5f, 0);  // Bajar el centro de masa para mayor estabilidad
         StoreInitialWheelLocalTransforms();
+        AdjustWheelFriction();
     }
 
     private void Update()
     {
         GetInputs();
+        WheelEffects();
     }
 
     private void LateUpdate()
@@ -63,9 +70,11 @@ public class CarScript : MonoBehaviour
 
     void Move()
     {
+        currentSpeed = carRb.velocity.magnitude * 3.6f; // Convierte m/s a km/h
+
         foreach (var wheel in wheels)
         {
-            wheel.wheelCollider.motorTorque = moveInput * 600 * maxAcceleration * Time.deltaTime;
+            wheel.wheelCollider.motorTorque = moveInput * 2400 * maxAcceleration * Time.deltaTime;
         }
     }
 
@@ -75,8 +84,13 @@ public class CarScript : MonoBehaviour
         {
             if (wheel.axel == Axel.Front)
             {
-                var _steerAngle = steerInput * turnSensitivity * maxSteerAngle;
-                wheel.wheelCollider.steerAngle = Mathf.Lerp(wheel.wheelCollider.steerAngle, _steerAngle, 0.6f);
+                float targetSteerAngle = steerInput * turnSensitivity * maxSteerAngle;
+                if (currentSpeed > 50f) // Reduce el ángulo de giro a alta velocidad
+                {
+                    targetSteerAngle = steerInput * turnSensitivity * highSpeedSteerAngle;
+                }
+
+                wheel.wheelCollider.steerAngle = Mathf.Lerp(wheel.wheelCollider.steerAngle, targetSteerAngle, 0.1f);
             }
         }
     }
@@ -87,7 +101,7 @@ public class CarScript : MonoBehaviour
         {
             foreach (var wheel in wheels)
             {
-                wheel.wheelCollider.brakeTorque = 300 * brakeAcceleration * Time.deltaTime;
+                wheel.wheelCollider.brakeTorque = 12000 * brakeAcceleration;
             }
         }
         else
@@ -121,6 +135,37 @@ public class CarScript : MonoBehaviour
         {
             initialWheelLocalPositions[wheel.wheelCollider] = wheel.wheelModel.transform.localPosition;
             initialWheelLocalRotations[wheel.wheelCollider] = wheel.wheelModel.transform.localRotation;
+        }
+    }
+
+    void AdjustWheelFriction()
+    {
+        foreach (var wheel in wheels)
+        {
+            WheelFrictionCurve forwardFriction = wheel.wheelCollider.forwardFriction;
+            WheelFrictionCurve sidewaysFriction = wheel.wheelCollider.sidewaysFriction;
+
+            forwardFriction.stiffness = 3f;
+            sidewaysFriction.stiffness = 4.0f;
+
+            wheel.wheelCollider.forwardFriction = forwardFriction;
+            wheel.wheelCollider.sidewaysFriction = sidewaysFriction;
+        }
+    }
+
+    void WheelEffects()
+    {
+        foreach (var wheel in wheels)
+        {
+            if (Input.GetKey(KeyCode.Space) && wheel.axel == Axel.Rear && wheel.wheelCollider.isGrounded == true && carRb.velocity.magnitude >= 10.0f)
+            {
+                wheel.wheelEffectGO.GetComponentInChildren<TrailRenderer>().emitting = true;
+                wheel.smokeParticle.Emit(1);
+            }
+            else
+            {
+                wheel.wheelEffectGO.GetComponentInChildren<TrailRenderer>().emitting = false;
+            }
         }
     }
 }
