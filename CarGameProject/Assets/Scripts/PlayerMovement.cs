@@ -16,6 +16,9 @@ public class PlayerMovement : MonoBehaviour
     float damage;
     bool isDamaged;
 
+    //Rigidbody
+    Rigidbody rb;
+
 
     // Start is called before the first frame update
     void Start()
@@ -33,11 +36,16 @@ public class PlayerMovement : MonoBehaviour
         Movement();
     }
 
-    void Movement()
+    public void Movement()
     {
         if (Input.GetKey(KeyCode.W))
         {
             transform.position = new Vector3(transform.position.x * speed, transform.position.y, transform.position.z);
         }
+    }
+
+    public void AirMovement()
+    {
+        rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
     }
 }
