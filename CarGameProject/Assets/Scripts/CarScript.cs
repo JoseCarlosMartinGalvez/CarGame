@@ -2,6 +2,8 @@ using System.Collections;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using TMPro;
+using UnityEngine.SceneManagement;
 
 public class CarScript : MonoBehaviour
 {
@@ -34,6 +36,13 @@ public class CarScript : MonoBehaviour
     float steerInput;
     private float currentSpeed;
 
+    public bool isCheckpoint;
+    public float lapsToWin;
+    public float laps;
+    public TextMeshProUGUI lapsText;
+
+    isGrounded isGroundedScript;
+
     private Rigidbody carRb;
 
     // Diccionarios para almacenar las posiciones y rotaciones iniciales locales de los modelos de las ruedas
@@ -46,20 +55,26 @@ public class CarScript : MonoBehaviour
         carRb.centerOfMass = new Vector3(0, -0.5f, 0);  // Bajar el centro de masa para mayor estabilidad
         StoreInitialWheelLocalTransforms();
         AdjustWheelFriction();
+        lapsText.text = laps.ToString() + "/1";
     }
 
     private void Update()
     {
         GetInputs();
-        WheelEffects();
     }
 
     private void LateUpdate()
     {
         Move();
-        Steer();
         Brake();
+    }
+
+    private void FixedUpdate()
+    {
+        Steer();
+        AdjustWheelFriction();
         UpdateWheelAnimations();
+        WheelEffects();
     }
 
     void GetInputs()
@@ -68,15 +83,31 @@ public class CarScript : MonoBehaviour
         steerInput = Input.GetAxis("Horizontal");
     }
 
+    public void AirMovement()
+    {
+        carRb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
+    }
+
     void Move()
     {
+        // Calcula la velocidad actual en km/h
         currentSpeed = carRb.velocity.magnitude * 3.6f; // Convierte m/s a km/h
+
+        // Limita la velocidad máxima
+        float maxSpeed = 150f; // Velocidad máxima en km/h
+        if (currentSpeed > maxSpeed)
+        {
+            currentSpeed = maxSpeed;
+        }
 
         foreach (var wheel in wheels)
         {
-            wheel.wheelCollider.motorTorque = moveInput * 2400 * maxAcceleration * Time.deltaTime;
+            // Ajusta el torque aplicado a las ruedas
+            float torque = moveInput * 2400 * maxAcceleration * Time.deltaTime;
+            wheel.wheelCollider.motorTorque = torque;
         }
     }
+
 
     void Steer()
     {
@@ -85,15 +116,36 @@ public class CarScript : MonoBehaviour
             if (wheel.axel == Axel.Front)
             {
                 float targetSteerAngle = steerInput * turnSensitivity * maxSteerAngle;
-                if (currentSpeed > 50f) // Reduce el ángulo de giro a alta velocidad
+
+                if (currentSpeed > 20f)
                 {
-                    targetSteerAngle = steerInput * turnSensitivity * highSpeedSteerAngle;
+                    float speedFactor = Mathf.InverseLerp(20f, 50f, currentSpeed);
+                    float adjustedSteerAngle = Mathf.Lerp(maxSteerAngle, highSpeedSteerAngle, speedFactor);
+                    targetSteerAngle = steerInput * turnSensitivity * adjustedSteerAngle;
                 }
 
-                wheel.wheelCollider.steerAngle = Mathf.Lerp(wheel.wheelCollider.steerAngle, targetSteerAngle, 0.1f);
+                float interpolationFactor = Mathf.Lerp(0.1f, 0.05f, Mathf.InverseLerp(0f, 50f, currentSpeed));
+
+                wheel.wheelCollider.steerAngle = Mathf.Lerp(wheel.wheelCollider.steerAngle, targetSteerAngle, interpolationFactor);
             }
         }
     }
+
+    void AdjustWheelFriction()
+    {
+        foreach (var wheel in wheels)
+        {
+            WheelFrictionCurve forwardFriction = wheel.wheelCollider.forwardFriction;
+            forwardFriction.stiffness = Mathf.Lerp(1f, 2f, Mathf.InverseLerp(0f, 50f, currentSpeed));
+            wheel.wheelCollider.forwardFriction = forwardFriction;
+
+            WheelFrictionCurve sidewaysFriction = wheel.wheelCollider.sidewaysFriction;
+            sidewaysFriction.stiffness = Mathf.Lerp(1f, 4f, Mathf.InverseLerp(0f, 50f, currentSpeed));
+            wheel.wheelCollider.sidewaysFriction = sidewaysFriction;
+        }
+    }
+
+
 
     void Brake()
     {
@@ -110,6 +162,24 @@ public class CarScript : MonoBehaviour
             {
                 wheel.wheelCollider.brakeTorque = 0;
             }
+        }
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag("CheckPoint"))
+        {
+            isCheckpoint = true;
+        }
+        if (other.CompareTag("FinishLine") && isCheckpoint == true)
+        {
+            laps++;
+            if (laps >= lapsToWin)
+            {
+                SceneManager.LoadScene(2);
+            }
+            lapsText.text = laps.ToString() + "/1";
+            isCheckpoint = false;
         }
     }
 
@@ -138,20 +208,6 @@ public class CarScript : MonoBehaviour
         }
     }
 
-    void AdjustWheelFriction()
-    {
-        foreach (var wheel in wheels)
-        {
-            WheelFrictionCurve forwardFriction = wheel.wheelCollider.forwardFriction;
-            WheelFrictionCurve sidewaysFriction = wheel.wheelCollider.sidewaysFriction;
-
-            forwardFriction.stiffness = 3f;
-            sidewaysFriction.stiffness = 4.0f;
-
-            wheel.wheelCollider.forwardFriction = forwardFriction;
-            wheel.wheelCollider.sidewaysFriction = sidewaysFriction;
-        }
-    }
 
     void WheelEffects()
     {

@@ -1,6 +1,6 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.AI;
+using UnityEngine.SceneManagement;
 
 public class EnemyCar : MonoBehaviour
 {
@@ -9,39 +9,108 @@ public class EnemyCar : MonoBehaviour
     public float rotationSpeed;
     public int currentWaypoint = 0;
 
-    //ROTATE WHEELS
+    // ROTATE WHEELS
     public Transform frontLeftWheel;
     public Transform frontRightWheel;
     public float wheelTurnAngle = 30f;
 
-    private void Update()
+    public bool isCheckpoint = false;
+    public float lapsToWin;
+    public float laps = 0;
+
+    public Transform Points;
+    int currentPoint;
+    public NavMeshAgent agent;
+
+    // JUMP PARAMETERS
+    public float jumpForce = 10f;
+    public LayerMask jumpLayerMask; // Máscara de capa para detectar áreas de salto
+
+    private Rigidbody rb;
+
+    // Specific Rotation for Ramp
+    public float rampRotationAngle = 45f; // Adjust the rotation angle for ramp
+
+    private void Start()
     {
-        if (waypoints.Length == 0) return;
+        agent = GetComponent<NavMeshAgent>();
+        rb = GetComponent<Rigidbody>();
 
-        Vector3 targetPosition = waypoints[currentWaypoint].position;
-        Vector3 direction = targetPosition - transform.position;
-
-        if (direction != Vector3.zero)
+        if (agent == null)
         {
-            Quaternion targetRotation = Quaternion.LookRotation(direction);
-            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
+            Debug.LogError("NavMeshAgent no encontrado en " + gameObject.name);
         }
 
-        transform.Translate(direction.normalized * speed * Time.deltaTime, Space.World);
-
-        if (Vector3.Distance(transform.position, targetPosition) < 0.1f)
+        if (Points == null || Points.childCount == 0)
         {
-            currentWaypoint = (currentWaypoint + 1) % waypoints.Length;
+            Debug.LogError("Points no asignado o no tiene hijos");
+            return;
         }
 
-        RotateFrontWheels(direction);
+        agent.SetDestination(Points.GetChild(currentPoint).position);
+
+        // Disable gravity when using NavMeshAgent
+        rb.useGravity = false;
     }
 
-    void RotateFrontWheels(Vector3 direction)
+    private void Update()
     {
-        float angle = Mathf.Clamp(Vector3.SignedAngle(transform.forward, direction, Vector3.up), -wheelTurnAngle, wheelTurnAngle);
+        if (agent == null || Points == null || Points.childCount == 0)
+        {
+            return;
+        }
 
-        frontLeftWheel.localRotation = Quaternion.Euler(0, 90+angle, 0);
-        frontRightWheel.localRotation = Quaternion.Euler(0,90+angle, 0);
+        if (agent.enabled)
+        {
+            agent.SetDestination(Points.GetChild(currentPoint).position);
+        }
+
+        if (Vector3.Distance(transform.position, Points.GetChild(currentPoint).position) < 20f)
+        {
+            currentPoint++;
+            if (currentPoint >= Points.childCount) currentPoint = 0;
+        }
+
+        if (ShouldJump())
+        {
+            Jump();
+        }
+
+        if (laps >= lapsToWin)
+        {
+            SceneManager.LoadScene(3);
+        }
+    }
+
+    bool ShouldJump()
+    {
+        // Detectar si el coche está sobre un área de salto
+        NavMeshHit hit;
+        if (agent.SamplePathPosition(NavMesh.AllAreas, 0.0f, out hit))
+        {
+            if ((jumpLayerMask.value & (1 << hit.mask)) != 0)
+            {
+                Debug.Log("Jump area detected");
+                return true;
+            }
+        }
+        return false;
+    }
+
+    void Jump()
+    {
+        // Realizar el salto
+        agent.enabled = false; // Desactivar el agente durante el salto
+        rb.useGravity = true; // Activar la gravedad durante el salto
+        rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
+        // Esperar un momento antes de reactivar el agente
+        Invoke("EnableNavMeshAgent", 1.0f); // Ajusta el tiempo según sea necesario
+    }
+
+    void EnableNavMeshAgent()
+    {
+        agent.enabled = true;
+        rb.useGravity = false; // Desactivar la gravedad al reactivar el agente
+        agent.SetDestination(Points.GetChild(currentPoint).position);
     }
 }

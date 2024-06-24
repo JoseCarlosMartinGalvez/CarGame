@@ -5,6 +5,11 @@ TagManager:
   serializedVersion: 2
   tags:
   - Ground
+  - CheckPoint
+  - Enemy
+  - FinishLine
+  - Jump
+  - Ramp
   layers:
   - Default
   - TransparentFX
@@ -13,9 +18,9 @@ TagManager:
   - Water
   - UI
   - Player
-  - 
-  - 
-  - 
+  - Ground
+  - Jump
+  - Enemy
   - 
   - 
   - 

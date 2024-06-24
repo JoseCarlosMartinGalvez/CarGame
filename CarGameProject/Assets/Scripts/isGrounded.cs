@@ -7,21 +7,26 @@ public class isGrounded : MonoBehaviour
 
     public PlayerMovement playerMovement;
 
+    public bool isGroundedBool = false;
+
+    public bool isRamp = false;
+
     public Rigidbody rb;
+
+    public CarScript carScript;
+
 
     private void OnTriggerEnter(Collider other)
     {
         if (other.tag.Equals("Ground"))
         {
-            print("isground");
+            isGroundedBool = true;
+            isRamp = false;
         }
         else if(other.tag.Equals("Ramp"))
         {
-            print("ramp");
-        }
-        else
-        {
-            playerMovement.AirMovement();
+            isRamp = true;
+            isGroundedBool = false;
         }
     }
 }
