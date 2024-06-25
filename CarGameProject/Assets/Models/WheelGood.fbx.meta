@@ -1,8 +1,38 @@
 fileFormatVersion: 2
 guid: 71317cd1a923640729172535d04cf4f5
 ModelImporter:
-  serializedVersion: 22200
-  internalIDToNameTable: []
+  serializedVersion: 21300
+  internalIDToNameTable:
+  - first:
+      74: 7751788484643806408
+    second: Rueda.001|asiento|Take 001|BaseLayer
+  - first:
+      74: -9190213311782766535
+    second: Rueda.001|bajos|Take 001|BaseLayer
+  - first:
+      74: -4491743976539219772
+    second: Rueda.001|car|Take 001|BaseLayer
+  - first:
+      74: 6350477947008580488
+    second: Rueda.001|car|Take 001|BaseLayer.001
+  - first:
+      74: 6842661224547540853
+    second: Rueda.001|luces|Take 001|BaseLayer
+  - first:
+      74: 3829694507941136136
+    second: Rueda.001|otros|Take 001|BaseLayer
+  - first:
+      74: -9106302068531540136
+    second: Rueda.001|Rueda|Take 001|BaseLayer
+  - first:
+      74: -8078811621759794132
+    second: Rueda.001|Rueda|Take 001|BaseLayer.001
+  - first:
+      74: -1818567629345244304
+    second: Rueda.001|tubos|Take 001|BaseLayer
+  - first:
+      74: 2293451098431689331
+    second: Rueda.001|volante|Take 001|BaseLayer
   externalObjects: {}
   materials:
     materialImportMode: 2
@@ -40,7 +70,6 @@ ModelImporter:
     addColliders: 0
     useSRGBMaterialColor: 1
     sortHierarchyByName: 1
-    importPhysicalCameras: 1
     importVisibility: 1
     importBlendShapes: 1
     importCameras: 1
@@ -68,7 +97,6 @@ ModelImporter:
     secondaryUVMinObjectScale: 1
     secondaryUVPackMargin: 4
     useFileScale: 1
-    strictVertexDataChecks: 0
   tangentSpace:
     normalSmoothAngle: 60
     normalImportMode: 0
@@ -101,7 +129,6 @@ ModelImporter:
   humanoidOversampling: 1
   avatarSetup: 0
   addHumanoidExtraRootOnlyWhenUsingAvatar: 1
-  importBlendShapeDeformPercent: 1
   remapMaterialsIfMaterialImportModeIsNone: 0
   additionalBone: 0
   userData: 
